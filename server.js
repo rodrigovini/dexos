@@ -9,6 +9,19 @@ server.get('/', () => {
 
 })
 
+server.post('/videos', () => {
+
+    return 'post video'
+
+})
+
+server.get('/videos', () => {
+
+    return 'get video'
+
+})
+
+
 server.listen({
 
     port: 3333,
