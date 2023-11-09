@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+}
+
+// Define a model for service order status
+model ServiceOrderStatus {
+    id                  Int                   @id @default(autoincrement())
+    name                String                @unique
+    serviceOrders       ServiceOrder[]
+    ServiceStatusUpdate ServiceStatusUpdate[]
+}
+
+// Define a model for attribute types
+model ServiceAttributeType {
+    id                Int                 @id @default(autoincrement())
+    name              String              @unique
+    serviceAttributes ServiceAttributes[]
+}
+
+// Define a model for user roles
+model UserRole {
+    id    Int    @id @default(autoincrement())
+    name  String @unique
+    users User[]
+}
+
+// Define a model for service orders
+model ServiceOrder {
+    id                   Int                   @id @default(autoincrement())
+    orderDate            DateTime              @default(now())
+    customer             User                  @relation("customer", fields: [customerId], references: [id])
+    customerId           Int
+    technician           User?                 @relation("technician", fields: [technicianId], references: [id])
+    technicianId         Int?
+    description          String
+    status               ServiceOrderStatus    @relation(fields: [serviceOrderStatusId], references: [id])
+    equipment            Equipment             @relation(fields: [equipmentId], references: [id])
+    equipmentId          Int
+    attributes           ServiceAttributes[]
+    // Define the opposite relation for serviceStatusUpdates
+    serviceStatusUpdates ServiceStatusUpdate[]
+    serviceOrderStatusId Int
+}
+
+// Define a model for equipment
+model Equipment {
+    id            Int            @id @default(autoincrement())
+    name          String
+    brand         EquipmentBrand @relation(fields: [brandId], references: [id])
+    brandId       Int
+    model         EquipmentModel @relation(fields: [modelId], references: [id])
+    modelId       Int
+    serialNumber  String
+    description   String?
+    serviceOrders ServiceOrder[]
+}
+
+// Define a model for equipment brands
+model EquipmentBrand {
+    id        Int         @id @default(autoincrement())
+    name      String
+    equipment Equipment[]
+}
+
+// Define a model for equipment models
+model EquipmentModel {
+    id        Int         @id @default(autoincrement())
+    name      String
+    equipment Equipment[]
+}
+
+// Define a model for service attributes
+model ServiceAttributes {
+    id              Int                  @id @default(autoincrement())
+    serviceOrder    ServiceOrder         @relation(fields: [serviceOrderId], references: [id])
+    serviceOrderId  Int
+    attributeType   ServiceAttributeType @relation(fields: [attributeTypeId], references: [id])
+    attributeTypeId Int
+    value           String
+}
+
+// Define a model for users (customers and technicians) with authentication fields
+model User {
+    id               Int            @id @default(autoincrement())
+    username         String
+    email            String         @unique
+    fullName         String
+    role             UserRole       @relation(fields: [userRoleId], references: [id])
+    serviceOrders    ServiceOrder[] @relation("customer")
+    hashedPassword   String
+    salt             String
+    technicianOrders ServiceOrder[] @relation("technician")
+    // Additional fields for clients
+    phoneNumber      String
+    address          String
+    city             String
+    postalCode       String
+    whatsappNumber   String
+    facebook         String?
+    twitter          String?
+    instagram        String?
+    linkedin         String?
+    // Add any other relevant fields for clients
+    userRoleId       Int
+}
+
+model ServiceStatusUpdate {
+    id                   Int                @id @default(autoincrement())
+    serviceOrder         ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
+    serviceOrderId       Int
+    status               ServiceOrderStatus @relation(fields: [serviceOrderStatusId], references: [id])
+    updateDate           DateTime           @default(now())
+    // You can add more information or comments about the status update as needed
+    serviceOrderStatusId Int
+}
