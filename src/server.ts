@@ -9,6 +9,7 @@ import { models } from './routes/models'
 import { equipmentTypes } from './routes/equipmentTypes'
 import { equipments } from './routes/equipments'
 import { userRoles } from './routes/userRoles'
+import { addresses } from './routes/addresses'
 
 const app = fastify()
 
@@ -26,6 +27,7 @@ app.register(models)
 app.register(equipmentTypes)
 app.register(equipments)
 app.register(userRoles)
+app.register(addresses)
 
 
 app.get('/', async() => {
