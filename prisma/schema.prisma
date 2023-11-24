@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
     provider = "prisma-client-js"
 }
@@ -10,114 +7,158 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// Define a model for service order status
-model ServiceOrderStatus {
-    id                  Int                   @id @default(autoincrement())
-    name                String                @unique
-    serviceOrders       ServiceOrder[]
-    ServiceStatusUpdate ServiceStatusUpdate[]
-}
-
-// Define a model for attribute types
-model ServiceAttributeType {
-    id                Int                 @id @default(autoincrement())
-    name              String              @unique
-    serviceAttributes ServiceAttributes[]
-}
-
-// Define a model for user roles
-model UserRole {
-    id    Int    @id @default(autoincrement())
-    name  String @unique
-    users User[]
-}
-
-// Define a model for service orders
-model ServiceOrder {
-    id                   Int                   @id @default(autoincrement())
-    orderDate            DateTime              @default(now())
-    customer             User                  @relation("customer", fields: [customerId], references: [id])
-    customerId           Int
-    technician           User?                 @relation("technician", fields: [technicianId], references: [id])
-    technicianId         Int?
-    description          String
-    status               ServiceOrderStatus    @relation(fields: [serviceOrderStatusId], references: [id])
-    equipment            Equipment             @relation(fields: [equipmentId], references: [id])
-    equipmentId          Int
-    attributes           ServiceAttributes[]
-    // Define the opposite relation for serviceStatusUpdates
-    serviceStatusUpdates ServiceStatusUpdate[]
-    serviceOrderStatusId Int
-}
-
-// Define a model for equipment
-model Equipment {
-    id            Int            @id @default(autoincrement())
-    name          String
-    brand         EquipmentBrand @relation(fields: [brandId], references: [id])
-    brandId       Int
-    model         EquipmentModel @relation(fields: [modelId], references: [id])
-    modelId       Int
-    serialNumber  String
-    description   String?
-    serviceOrders ServiceOrder[]
-}
-
-// Define a model for equipment brands
-model EquipmentBrand {
-    id        Int         @id @default(autoincrement())
-    name      String
-    equipment Equipment[]
-}
-
-// Define a model for equipment models
-model EquipmentModel {
-    id        Int         @id @default(autoincrement())
-    name      String
-    equipment Equipment[]
-}
-
-// Define a model for service attributes
-model ServiceAttributes {
-    id              Int                  @id @default(autoincrement())
-    serviceOrder    ServiceOrder         @relation(fields: [serviceOrderId], references: [id])
-    serviceOrderId  Int
-    attributeType   ServiceAttributeType @relation(fields: [attributeTypeId], references: [id])
-    attributeTypeId Int
-    value           String
-}
-
-// Define a model for users (customers and technicians) with authentication fields
+// Modelo de User
 model User {
-    id               Int            @id @default(autoincrement())
-    username         String
-    email            String         @unique
-    fullName         String
-    role             UserRole       @relation(fields: [userRoleId], references: [id])
-    serviceOrders    ServiceOrder[] @relation("customer")
-    hashedPassword   String
-    salt             String
-    technicianOrders ServiceOrder[] @relation("technician")
-    // Additional fields for clients
-    phoneNumber      String
-    address          String
-    city             String
-    postalCode       String
-    whatsappNumber   String
-    facebook         String?
-    twitter          String?
-    instagram        String?
-    linkedin         String?
-    // Add any other relevant fields for clients
-    userRoleId       Int
+    id             String     @id @default(uuid())
+    email          String     @unique
+    username       String     @unique
+    fullName       String
+    hashedPassword String?
+    salt           String?
+    addressId      String?
+    address        Address?   @relation(fields: [addressId], references: [id])
+    whatsappNumber String
+    facebook       String?
+    twitter        String?
+    instagram      String?
+    linkedin       String?
+    createAt       DateTime   @default(now())
+    roles          UserRole[]
+
+    orders Order[] @relation("user_orders")
 }
 
-model ServiceStatusUpdate {
-    id                   Int                @id @default(autoincrement())
-    serviceOrder         ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
-    serviceOrderId       Int
-    status               ServiceOrderStatus @relation(fields: [serviceOrderStatusId], references: [id])
-    updateDate           DateTime           @default(now())
-    // You can add more information or comments about the status update as needed
-    serviceOrderStatusId Int
+// Modelo de Client
+model Client {
+    id                String    @id @default(uuid())
+    clientType        String
+    name              String
+    email             String
+    fullName          String?
+    gender            String?
+    dateOfBirth       DateTime?
+    cpf               String?   @unique
+    addressId         String?
+    address           Address?  @relation(fields: [addressId], references: [id])
+    nationality       String?
+    rg                String?
+    companyName       String?
+    tradeName         String?
+    cnpj              String?   @unique
+    stateRegistration String?
+    activityField     String?
+    residentialPhone  String?
+    cellPhone         String?
+    commercialPhone   String?
+    createAt          DateTime  @default(now())
+
+    // ... outros campos do cliente
+
+    orders Order[] @relation("client_orders")
+}
+
+// Modelo de Technician
+model Technician {
+    id              String   @id @default(uuid())
+    name            String
+    fullName        String
+    email           String
+    cellPhone       String
+    commercialPhone String?
+    createAt        DateTime @default(now())
+    // ... outros campos do técnico
+
+    orders Order[] @relation("technician_orders")
+}
+
+// Modelo de Brand (Marca)
+model Brand {
+    id   String @id @default(uuid())
+    name String
+    // Outros campos específicos da marca, se necessário
+
+    models    Model[] // Relacionamento com modelos
+    Equipment Equipment[]
+}
+
+// Modelo de Model (Modelo do Equipamento)
+model Model {
+    id   String @id @default(uuid())
+    name String
+    // Outros campos específicos do modelo, se necessário
+
+    brand     Brand?      @relation(fields: [brandId], references: [id])
+    brandId   String
+    Equipment Equipment[]
+}
+
+// Modelo de EquipmentType (Tipo de Equipamento)
+model EquipmentType {
+    id   String @id @default(uuid())
+    name String
+    // Outros campos relacionados ao tipo de equipamento, se necessário
+
+    equipments Equipment[] // Relacionamento com equipamentos desse tipo
+}
+
+// Modelo de Equipment
+model Equipment {
+    id           String @id @default(uuid())
+    description  String
+    serialNumber String
+    modelNumber  String
+
+    // ... outros campos do equipamento
+
+    brand   Brand?  @relation(fields: [brandId], references: [id])
+    brandId String?
+
+    model   Model?  @relation(fields: [modelId], references: [id])
+    modelId String?
+
+    equipmentType   EquipmentType? @relation(fields: [equipmentTypeId], references: [id])
+    equipmentTypeId String?
+    // ... outros campos do equipamento
+    createAt        DateTime       @default(now())
+
+    orders Order[] @relation("equipment_orders")
+}
+
+// Modelo de Order
+model Order {
+    id           String      @id @default(uuid())
+    status       String?     @default("Aguardando")
+    createdAt    DateTime    @default(now())
+    createdBy    User?       @relation("user_orders", fields: [createdById], references: [id])
+    createdById  String?
+    client       Client?     @relation("client_orders", fields: [clientId], references: [id])
+    clientId     String?
+    technician   Technician? @relation("technician_orders", fields: [technicianId], references: [id])
+    technicianId String?
+    equipment    Equipment?  @relation("equipment_orders", fields: [equipmentId], references: [id])
+    equipmentId  String?
+
+    // ... outros campos da ordem de serviço
+}
+
+// Modelo de UserRole
+model UserRole {
+    id    String @id @default(uuid())
+    name  String
+    users User[] // Relacionamento com usuários
+}
+
+model Address {
+    id           String   @id @default(uuid())
+    street       String
+    number       String
+    complement   String?
+    neighborhood String?
+    zipCode      String
+    city         String?
+    state        String?
+    country      String?
+    User         User[]
+    Client       Client[]
+    createAt     DateTime @default(now())
 }
